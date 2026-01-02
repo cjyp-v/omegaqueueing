@@ -6,784 +6,825 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
-      --bg: #ffffff;
-      --text: #111;
-      --muted: #666;
-      --accent: #0d6efd;
-      --danger: #dc3545;
-      --orange: #ff9800;
-      --green: #2e7d32;
-      --redTeam: #ff5252;
-      --blueTeam: #2979ff;
-      --border: #ddd;
-      --panel: #f7f7f9;
+      --bg:#ffffff;
+      --text:#1a1a1a;
+      --muted:#7a7a7a;
+      --accent:#1f7aec;
+      --danger:#c62828;
+      --orange:#ff9800;
+      --red:#ff5252;
+      --blue:#3b82f6;
+      --card:#f5f7fa;
+      --border:#dce3ee;
+      --green:#2e7d32;
     }
-    html, body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif; margin:0; }
-    header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      display:flex; align-items:center; justify-content:space-between;
-      background: #fff;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
     }
-    header h1 { margin:0; font-size: 20px; font-weight: 700; }
-    .controls { display:flex; gap:8px; flex-wrap:wrap; }
-    .controls button, .controls input, .controls select {
-      padding:8px 10px; border:1px solid var(--border); background:#fff; border-radius:6px; font-size:13px;
+    header{
+      padding:10px 14px;
+      border-bottom:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;
+      position:sticky;top:0;background:var(--bg);z-index:10;
     }
-    .controls button { cursor:pointer; }
-    .controls .primary { background: var(--accent); color:#fff; border-color: var(--accent); }
-    .container { padding: 16px 20px; display:grid; gap:16px; }
-    /* Top 3-grid */
-    .top-grid {
-      display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px;
+    header h1{
+      font-size:18px;margin:0;font-weight:700;letter-spacing:0.2px;
     }
-    /* Bottom 2-grid */
-    .bottom-grid {
-      display:grid; grid-template-columns: 1.2fr 0.8fr; gap:16px;
+    header .actions{
+      display:flex;gap:8px;flex-wrap:wrap;
     }
-    .panel {
-      background:#fff; border:1px solid var(--border); border-radius:8px; overflow:hidden;
-      display:flex; flex-direction:column; min-height: 260px;
+    button, .btn{
+      border:1px solid var(--border);
+      background:#fff;
+      color:var(--text);
+      border-radius:6px;
+      padding:6px 10px;
+      font-size:13px;
+      cursor:pointer;
     }
-    .panel header {
-      background: var(--panel); border-bottom: 1px solid var(--border);
+    button.primary{border-color:var(--accent);color:#fff;background:var(--accent)}
+    button.danger{border-color:var(--danger);color:#fff;background:var(--danger)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    input, select{
+      border:1px solid var(--border);
+      border-radius:6px;
+      padding:6px 10px;
+      font-size:13px;
+      background:#fff;
+      color:var(--text);
     }
-    .panel header h2 { margin:0; font-size:16px; }
-    .panel .body { padding:12px; display:flex; gap:12px; flex:1; }
-    .panel .section-title { font-weight:600; font-size:13px; color:var(--muted); margin-bottom:8px; }
-    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-    .stack { display:flex; flex-direction:column; gap:6px; }
-    .queue-input { display:flex; gap:8px; }
-    .queue-input input { flex:1; }
-    .list {
+
+    /* Layout */
+    .container{
+      padding:12px;
+      display:grid;
+      gap:12px;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-auto-rows:minmax(220px, auto);
+    }
+    .section{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      min-height:220px;
+    }
+    .section h2{
+      font-size:15px;
+      margin:0 0 10px 0;
+      font-weight:700;
+    }
+    .subhead{
+      font-size:12px;color:var(--muted);margin-bottom:10px;
+    }
+    .grid-2{
+      display:grid;grid-template-columns:1fr 1fr;gap:8px;
+    }
+    .bottom-grid{
+      display:grid;grid-template-columns: 1fr 1fr;gap:12px;margin:12px;
+    }
+
+    /* Queueing list */
+    .queue-header{
+      display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;
+    }
+    .queue-count{font-size:12px;color:var(--muted)}
+    .queue-list{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr)); /* "3 rows" appearance via 3 columns grid */
+      gap:6px;
+      align-content:start;
+      overflow:auto;
+      min-height:140px;
+      padding:2px;
       border:1px dashed var(--border);
-      border-radius:8px; padding:8px;
-      min-height: 160px; background:#fff;
+      border-radius:8px;
     }
-    .droppable-highlight { border-color: var(--accent) !important; background: #f0f7ff !important; }
-    .team {
-      flex:1; min-width:160px;
+    .player-chip{
+      display:flex;align-items:center;gap:6px;
+      border:1px solid var(--border);
+      background:var(--card);
+      border-radius:8px;
+      padding:4px 6px; /* compact */
+      min-height:28px;
+      user-select:none;
     }
-    .team header { display:flex; align-items:center; justify-content:space-between; }
-    .team h3 { margin:0; font-size:14px; }
-    .team .badge { font-size:12px; color:#fff; padding:2px 8px; border-radius:12px; }
-    .badge.red { background: var(--redTeam); }
-    .badge.blue { background: var(--blueTeam); }
-    .player {
-      display:flex; align-items:center; justify-content:space-between;
-      gap:8px; padding:8px; border:1px solid var(--border); border-radius:6px; background:#fff; margin-bottom:6px;
+    .player-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+    .timer{font-size:11px;color:var(--muted)}
+    .plays{font-size:11px;color:var(--accent);font-weight:700}
+    .chip-actions{
+      margin-left:auto;display:flex;gap:4px;align-items:center;
     }
-    .player.dragging { opacity: 0.5; }
-    .player .meta { display:flex; flex-direction:column; gap:2px; }
-    .player .name { font-weight:600; font-size:13px; }
-    .player .timer { font-size:12px; color:var(--muted); }
-    .player .actions { display:flex; gap:6px; align-items:center; }
-    .pill { font-size:11px; border:1px solid var(--border); padding:2px 6px; border-radius:999px; color:var(--muted); }
-    .btn-x {
-      width:22px; height:22px; border-radius:50%; border:1px solid var(--border); background:#fff; color:var(--danger);
-      display:grid; place-items:center; cursor:pointer; font-weight:700; line-height:1;
+    .chip-x{
+      width:16px;height:16px;display:flex;align-items:center;justify-content:center;
+      border-radius:4px;border:1px solid var(--border);cursor:pointer;background:#fff;color:var(--danger);font-size:11px;line-height:1;
     }
-    .orange { background: #fff7e6; border-color: #ffe0b3; }
-    .court-controls { display:flex; gap:8px; }
-    .court-controls button { padding:6px 10px; font-size:12px; }
-    .court {
-      border:1px solid var(--border); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:8px; background:#fff;
+    .player-chip.wait20{background:#fff8e1;border-color:#ffd54f}
+    .draggable{cursor:grab}
+    .drag-over{outline:2px dashed var(--accent);outline-offset:2px}
+
+    /* Waiting lists */
+    .waiting-box{
+      border:1px solid var(--border);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px
     }
-    .court header { display:flex; align-items:center; justify-content:space-between; }
-    .court-title { font-weight:700; }
-    .small { font-size:12px; color:var(--muted); }
-    .history-item {
-      border:1px solid var(--border); border-radius:8px; padding:8px; background:#fff; margin-bottom:8px;
+    .waiting-title{font-size:13px;font-weight:700}
+    .team{
+      border:1px dashed var(--border);border-radius:6px;padding:4px;min-height:48px; /* tight cap for two names */
+      display:flex;flex-direction:column;gap:4px;overflow:auto;
     }
-    .payment-row {
-      display:flex; gap:8px; align-items:center; margin-bottom:8px;
+    .team-label{font-size:12px;font-weight:700;margin-bottom:4px}
+    .team-a .team-label{color:var(--red)}
+    .team-b .team-label{color:var(--blue)}
+
+    /* Courts */
+    .court{
+      border:1px solid var(--border);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px
     }
-    .payment-row input, .payment-row select { padding:6px 8px; border:1px solid var(--border); border-radius:6px; }
-    .totals { display:flex; gap:12px; flex-wrap:wrap; margin-top:8px; }
-    .totals .total { border:1px solid var(--border); border-radius:8px; padding:8px; background:#fff; }
-    .footer-controls { display:flex; gap:8px; flex-wrap:wrap; padding: 10px 12px; border-top:1px solid var(--border); background: var(--panel); }
-    .help { font-size:12px; color:var(--muted); }
+    .court-header{display:flex;align-items:center;gap:8px}
+    .court-title{font-size:13px;font-weight:700}
+    .court-teams{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .court .team{min-height:48px} /* tight cap */
+    .court-controls{display:flex;gap:6px;align-items:center;margin-top:6px}
+    .court-timer{font-size:12px;color:var(--muted)}
+
+    /* Match history */
+    .history-list{
+      display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:160px;border:1px dashed var(--border);border-radius:8px;padding:6px
+    }
+    .history-item{
+      border:1px solid var(--border);border-radius:8px;background:var(--card);padding:6px;font-size:12px
+    }
+
+    /* Payments */
+    .payments-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+    .payments-table{
+      width:100%;border-collapse:collapse;font-size:12px
+    }
+    .payments-table th, .payments-table td{
+      border:1px solid var(--border);padding:6px;text-align:left
+    }
+    .totals{display:flex;gap:12px;margin-top:8px;font-size:12px}
+    .totals .pill{border:1px solid var(--border);border-radius:999px;padding:4px 8px}
+    .export-btn{margin-top:8px}
+
+    /* Footer actions (clear data) */
+    .footer-actions{
+      display:flex;gap:8px;justify-content:flex-end;padding:10px;border-top:1px solid var(--border);margin-top:10px
+    }
+
+    /* Small devices */
+    @media (max-width: 980px){
+      .container{grid-template-columns:1fr}
+      .bottom-grid{grid-template-columns:1fr;margin:0 12px 12px}
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>Omega Cock Queueing App</h1>
-    <div class="controls">
+    <div class="actions">
       <button id="clearDataBtn" class="danger">Clear current data</button>
-      <span class="help">Drag names across Queueing, Waiting Lists, and Courts. Game end returns players to queue.</span>
+      <button id="saveBtn" class="primary">Save</button>
     </div>
   </header>
 
-  <div class="container">
-    <!-- Top grid: queue | waiting | courts -->
-    <div class="top-grid">
-      <!-- Queueing list -->
-      <section class="panel" id="queuePanel">
-        <header>
-          <h2>Queueing list</h2>
-        </header>
-        <div class="body stack">
-          <div class="queue-input">
-            <input type="text" id="queueInput" placeholder="Type player name and press Enter" />
-            <span class="pill" id="totalPlayersPill">Total: 0</span>
-          </div>
-          <div id="queueList" class="list" data-dropzone="queue"></div>
-        </div>
-        <div class="footer-controls">
-          <span class="help">Names turn orange after waiting 20 minutes.</span>
-        </div>
-      </section>
+  <!-- Top row: queueing list | waiting list | court -->
+  <div class="container" id="topRow">
+    <!-- Queueing list -->
+    <section class="section" id="queueSection">
+      <h2>Queueing list</h2>
+      <div class="queue-header">
+        <input id="playerInput" type="text" placeholder="Add player name and press Enter" />
+        <span class="queue-count" id="queueCount">Total: 0</span>
+      </div>
+      <div class="queue-list" id="queueList" aria-label="Queue list droppable"></div>
+      <div class="subhead">Tip: Drag names to waiting lists or courts. Names turn orange after 20 minutes of waiting.</div>
+    </section>
 
-      <!-- Waiting lists -->
-      <section class="panel" id="waitingPanel">
-        <header>
-          <h2>Waiting lists</h2>
-        </header>
-        <div class="body stack" id="waitingLists">
-          <!-- Waiting lists will render here -->
-        </div>
-      </section>
+    <!-- Waiting lists -->
+    <section class="section" id="waitingSection">
+      <h2>Waiting lists</h2>
+      <div class="grid-2" id="waitingLists">
+        <!-- Waiting List boxes will be rendered -->
+      </div>
+      <div class="subhead">Waiting lists 1–4 with Team A and Team B. Maximum 2 players per team.</div>
+    </section>
 
-      <!-- Courts -->
-      <section class="panel" id="courtsPanel">
-        <header>
-          <h2>Courts</h2>
-        </header>
-        <div class="body stack">
-          <div class="row">
-            <button id="addCourtBtn" class="primary">Add court</button>
-            <span class="help">Game won't start unless both teams have 2 players.</span>
-          </div>
-          <div id="courtsContainer" class="stack"></div>
-        </div>
-      </section>
-    </div>
-
-    <!-- Bottom grid: history | payments -->
-    <div class="bottom-grid">
-      <!-- Match history -->
-      <section class="panel" id="historyPanel">
-        <header>
-          <h2>Match history</h2>
-        </header>
-        <div class="body stack" id="historyContainer"></div>
-      </section>
-
-      <!-- Payment -->
-      <section class="panel" id="paymentPanel">
-        <header>
-          <h2>Payment</h2>
-        </header>
-        <div class="body stack">
-          <div class="payment-row">
-            <input type="text" id="payName" placeholder="Player name" />
-            <input type="number" id="payAmount" placeholder="Amount" min="0" step="0.01" />
-            <select id="payMethod">
-              <option value="cash">Cash</option>
-              <option value="gcash">GCash</option>
-            </select>
-            <button id="addPaymentBtn" class="primary">Add payment</button>
-          </div>
-          <div id="paymentsList" class="stack"></div>
-          <div class="totals" id="paymentTotals">
-            <div class="total" id="totalCash">Total cash: 0</div>
-            <div class="total" id="totalGcash">Total GCash: 0</div>
-            <div class="total" id="grandTotal">Grand total: 0</div>
-          </div>
-        </div>
-        <div class="footer-controls">
-          <button id="exportPaymentsBtn">Export payments to Excel (CSV)</button>
-        </div>
-      </section>
-    </div>
+    <!-- Courts -->
+    <section class="section" id="courtsSection">
+      <h2>Courts</h2>
+      <div class="court-header">
+        <button id="addCourtBtn" class="primary">Add court</button>
+      </div>
+      <div id="courtsContainer" class="grid-2"></div>
+      <div class="subhead">Start requires both teams filled. End moves players to queue bottom, resets their waiting timer, and logs match history.</div>
+    </section>
   </div>
 
-  <script>
-    // --- State management ---
-    const STORAGE_KEY = 'omegaCockQueueAppState';
+  <!-- Bottom row: match history | payment -->
+  <div class="bottom-grid" id="bottomRow">
+    <!-- Match history -->
+    <section class="section" id="historySection">
+      <h2>Match history</h2>
+      <div class="history-list" id="historyList"></div>
+    </section>
 
+    <!-- Payment -->
+    <section class="section" id="paymentSection">
+      <h2>Payment</h2>
+      <div class="payments-controls">
+        <input id="paymentName" type="text" placeholder="Player name" />
+        <input id="paymentAmount" type="number" min="0" step="0.01" placeholder="Amount" />
+        <select id="paymentMethod">
+          <option value="cash">Cash</option>
+          <option value="gcash">GCash</option>
+        </select>
+        <button id="addPaymentBtn" class="primary">Add payment</button>
+      </div>
+      <table class="payments-table" id="paymentsTable">
+        <thead>
+          <tr><th>Name</th><th>Amount</th><th>Method</th><th>Time</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="totals">
+        <span class="pill" id="cashTotal">Cash: 0</span>
+        <span class="pill" id="gcashTotal">GCash: 0</span>
+        <span class="pill" id="grandTotal">Grand total: 0</span>
+      </div>
+      <button id="exportPaymentsBtn" class="btn export-btn">Export payments to Excel (CSV)</button>
+    </section>
+  </div>
+
+  <footer class="footer-actions">
+    <span class="subhead">Data auto-saves to local storage.</span>
+  </footer>
+
+  <script>
+    // --- Data structures and state ---
     const state = {
-      players: {}, // id -> {id,name,timerStartAt,lastMovedAt,location:{type:'queue'|'waiting'|'court', waitingId?, courtId?, team?}}
-      queue: [], // playerIds in order
-      waitingLists: [
-        { id: 'w1', name: 'Waiting list 1', teams: { A: [], B: [] } },
-        { id: 'w2', name: 'Waiting list 2', teams: { A: [], B: [] } },
-        { id: 'w3', name: 'Waiting list 3', teams: { A: [], B: [] } },
-        { id: 'w4', name: 'Waiting list 4', teams: { A: [], B: [] } },
-      ],
-      courts: [], // {id, name, teams:{A:[],B:[]}, status:'idle'|'running', startTime:null}
-      history: [], // {courtId,courtName,teamA,teamB,startedAt,endedAt,durationMs}
-      payments: [], // {id,name,amount,method,timestamp}
+      players: [], // {id,name,plays,waitStart}
+      queue: [],   // player ids in order
+      waiting: {   // 4 waiting lists: each with teamA:[], teamB:[]
+        1: { teamA: [], teamB: [] },
+        2: { teamA: [], teamB: [] },
+        3: { teamA: [], teamB: [] },
+        4: { teamA: [], teamB: [] },
+      },
+      courts: [],  // {id, name, teamA:[], teamB:[], startedAt:null}
+      history: [], // {courtName, teamA:[names], teamB:[names], durationMs, endedAt}
+      payments: [] // {name, amount, method, time}
     };
 
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-    function loadState() {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      try {
-        const loaded = JSON.parse(raw);
-        // Shallow merge to keep defaults if missing
-        Object.assign(state, loaded);
-      } catch (e) {
-        console.warn('Failed to load state:', e);
-      }
-    }
+    const WAIT_ORANGE_MS = 20 * 60 * 1000; // 20 minutes
+
     // --- Utilities ---
-    function uid(prefix='id') {
-      return prefix + '_' + Math.random().toString(36).slice(2,9);
+    const uid = () => Math.random().toString(36).slice(2,10);
+    const fmtTime = (ms) => {
+      const s = Math.floor(ms / 1000);
+      const hh = Math.floor(s / 3600);
+      const mm = Math.floor((s % 3600) / 60);
+      const ss = s % 60;
+      return `${hh>0?hh+':':''}${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+    };
+    const now = () => Date.now();
+
+    // --- Local storage ---
+    const STORAGE_KEY = 'omega_cock_queueing_app_v1';
+    function save(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      bumpUI();
     }
-    function now() { return Date.now(); }
-    function msToHMS(ms) {
-      const totalSec = Math.floor(ms/1000);
-      const h = Math.floor(totalSec/3600);
-      const m = Math.floor((totalSec%3600)/60);
-      const s = totalSec%60;
-      if (h>0) return `${h}h ${m}m ${s}s`;
-      return `${m}m ${s}s`;
+    function load(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      try{
+        const obj = JSON.parse(raw);
+        // Basic merge with defaults
+        Object.assign(state, obj);
+      }catch(e){}
     }
-    function playerWaitingMs(p) {
-      return Math.max(0, now() - (p.timerStartAt ?? now()));
+    function clearData(){
+      if(!confirm('Clear current data? This cannot be undone.')) return;
+      state.players = [];
+      state.queue = [];
+      state.waiting = {1:{teamA:[],teamB:[]},2:{teamA:[],teamB:[]},3:{teamA:[],teamB:[]},4:{teamA:[],teamB:[]}};
+      state.courts = [];
+      state.history = [];
+      state.payments = [];
+      save();
     }
-    function isOrange(p) {
-      return playerWaitingMs(p) >= 20 * 60 * 1000; // 20 mins
+
+    // --- Core operations ---
+    function addPlayerToQueue(name){
+      const trimmed = String(name||'').trim();
+      if(!trimmed) return;
+      const p = { id: uid(), name: trimmed, plays: 0, waitStart: now() };
+      state.players.push(p);
+      state.queue.push(p.id);
+      save();
+    }
+    function removePlayerCompletely(id){
+      // Remove from queue and any waiting/court slots
+      state.queue = state.queue.filter(x=>x!==id);
+      for(const i of [1,2,3,4]){
+        state.waiting[i].teamA = state.waiting[i].teamA.filter(x=>x!==id);
+        state.waiting[i].teamB = state.waiting[i].teamB.filter(x=>x!==id);
+      }
+      state.courts.forEach(c=>{
+        c.teamA = c.teamA.filter(x=>x!==id);
+        c.teamB = c.teamB.filter(x=>x!==id);
+      });
+      // Remove from players
+      state.players = state.players.filter(p=>p.id!==id);
+      save();
+    }
+    function getPlayer(id){ return state.players.find(p=>p.id===id); }
+
+    function moveToQueueBottom(id, {resetWait=false} = {}){
+      // Ensure removed from everywhere first
+      state.queue = state.queue.filter(x=>x!==id);
+      for(const i of [1,2,3,4]){
+        state.waiting[i].teamA = state.waiting[i].teamA.filter(x=>x!==id);
+        state.waiting[i].teamB = state.waiting[i].teamB.filter(x=>x!==id);
+      }
+      state.courts.forEach(c=>{
+        c.teamA = c.teamA.filter(x=>x!==id);
+        c.teamB = c.teamB.filter(x=>x!==id);
+      });
+      // Add bottom and optionally reset wait timer
+      const p = getPlayer(id);
+      if(!p) return;
+      if(resetWait) p.waitStart = now();
+      state.queue.push(id);
+      save();
+    }
+
+    function canDropToTeam(teamArr){ return teamArr.length < 2; }
+
+    function startCourt(courtId){
+      const c = state.courts.find(x=>x.id===courtId);
+      if(!c) return;
+      if(c.teamA.length<2 || c.teamB.length<2){
+        alert('Fill both teams with 2 players before starting.');
+        return;
+      }
+      c.startedAt = now();
+      save();
+    }
+
+    function endCourt(courtId){
+      const c = state.courts.find(x=>x.id===courtId);
+      if(!c || !c.startedAt){
+        alert('Court has not started yet.');
+        return;
+      }
+      const durationMs = now() - c.startedAt;
+      const teamANames = c.teamA.map(getPlayer).filter(Boolean).map(p=>p.name);
+      const teamBNames = c.teamB.map(getPlayer).filter(Boolean).map(p=>p.name);
+
+      state.history.unshift({
+        courtName: c.name,
+        teamA: teamANames,
+        teamB: teamBNames,
+        durationMs,
+        endedAt: now()
+      });
+      // Increment plays for each player and move back to queue bottom with reset
+      [...c.teamA, ...c.teamB].forEach(id=>{
+        const p = getPlayer(id); if(p){ p.plays += 1; }
+        moveToQueueBottom(id, {resetWait:true});
+      });
+
+      // Reset court
+      c.teamA = [];
+      c.teamB = [];
+      c.startedAt = null;
+      save();
+    }
+
+    function addCourt(){
+      const idx = state.courts.length + 1;
+      state.courts.push({
+        id: uid(),
+        name: `Court ${idx}`,
+        teamA: [],
+        teamB: [],
+        startedAt: null
+      });
+      save();
+    }
+
+    // --- Drag & Drop ---
+    let dragId = null;
+    let dragFrom = null; // e.g., {type:'queue'} or {type:'waiting', list:1, team:'teamA'} or {type:'court', courtId, team:'teamA'}
+
+    function makeDraggableChip(el, id, from){
+      el.draggable = true;
+      el.classList.add('draggable');
+      el.addEventListener('dragstart', (e)=>{
+        dragId = id;
+        dragFrom = from;
+        e.dataTransfer.setData('text/plain', id);
+      });
+      el.addEventListener('dragend', ()=>{
+        dragId = null;
+        dragFrom = null;
+      });
+    }
+
+    function makeDroppable(el, onDrop){
+      el.addEventListener('dragover', (e)=>{
+        e.preventDefault();
+        el.classList.add('drag-over');
+      });
+      el.addEventListener('dragleave', ()=>{
+        el.classList.remove('drag-over');
+      });
+      el.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        el.classList.remove('drag-over');
+        const id = e.dataTransfer.getData('text/plain') || dragId;
+        if(!id) return;
+        onDrop(id);
+      });
     }
 
     // --- Rendering ---
-    function renderAll() {
-      renderQueue();
-      renderWaiting();
-      renderCourts();
-      renderHistory();
-      renderPayments();
-      saveState();
-    }
+    const queueListEl = document.getElementById('queueList');
+    const queueCountEl = document.getElementById('queueCount');
+    const waitingListsEl = document.getElementById('waitingLists');
+    const courtsContainerEl = document.getElementById('courtsContainer');
+    const historyListEl = document.getElementById('historyList');
+    const paymentsTBodyEl = document.querySelector('#paymentsTable tbody');
+    const cashTotalEl = document.getElementById('cashTotal');
+    const gcashTotalEl = document.getElementById('gcashTotal');
+    const grandTotalEl = document.getElementById('grandTotal');
 
-    function renderQueue() {
-      const list = document.getElementById('queueList');
-      list.innerHTML = '';
-      state.queue.forEach(pid => {
-        const p = state.players[pid];
-        if (!p) return;
-        list.appendChild(renderPlayerItem(p, { showLocation: true, onRemove: () => removeFromQueue(pid) }));
+    function renderQueue(){
+      queueListEl.innerHTML = '';
+      state.queue.forEach(id=>{
+        const p = getPlayer(id);
+        if(!p) return;
+        const chip = document.createElement('div');
+        chip.className = 'player-chip';
+        const waitedMs = now() - (p.waitStart || now());
+        if(waitedMs >= WAIT_ORANGE_MS) chip.classList.add('wait20');
+
+        chip.innerHTML = `
+          <span class="player-name" title="${p.name}">${p.name}</span>
+          <span class="plays" title="Plays">${p.plays}</span>
+          <span class="timer">${fmtTime(waitedMs)}</span>
+          <div class="chip-actions">
+            <button class="chip-x" title="Remove">x</button>
+          </div>
+        `;
+        chip.querySelector('.chip-x').addEventListener('click', ()=>{
+          // In queue: delete completely (mistaken entry)
+          removePlayerCompletely(id);
+        });
+        makeDraggableChip(chip, id, {type:'queue'});
+        queueListEl.appendChild(chip);
       });
-      document.getElementById('totalPlayersPill').textContent = `Total: ${state.queue.length}`;
+      queueCountEl.textContent = `Total: ${state.players.length}`;
     }
 
-    function renderWaiting() {
-      const container = document.getElementById('waitingLists');
-      container.innerHTML = '';
-      state.waitingLists.forEach(w => {
-        const wrap = document.createElement('div');
-        wrap.className = 'stack';
-        const title = document.createElement('div');
-        title.className = 'section-title';
-        title.textContent = w.name;
-        wrap.appendChild(title);
+    // Dropping onto queue adds player to bottom (does not reset, unless from court end)
+    makeDroppable(queueListEl, (id)=>{
+      // Move player to queue bottom (do NOT reset timer here)
+      moveToQueueBottom(id, {resetWait:false});
+    });
 
-        const row = document.createElement('div');
-        row.className = 'row';
+    function renderWaiting(){
+      waitingListsEl.innerHTML = '';
+      [1,2,3,4].forEach(i=>{
+        const box = document.createElement('div');
+        box.className = 'waiting-box';
+        box.innerHTML = `<div class="waiting-title">Waiting list ${i}</div>`;
+        // Team A
+        const teamABox = document.createElement('div');
+        teamABox.className = 'team team-a';
+        teamABox.innerHTML = `<div class="team-label">Team A</div>`;
+        // Team B
+        const teamBBox = document.createElement('div');
+        teamBBox.className = 'team team-b';
+        teamBBox.innerHTML = `<div class="team-label">Team B</div>`;
+
+        // Render players in each team
+        state.waiting[i].teamA.forEach(id=>{
+          const p = getPlayer(id); if(!p) return;
+          const waitedMs = now() - (p.waitStart || now());
+          const chip = document.createElement('div');
+          chip.className = 'player-chip';
+          if(waitedMs >= WAIT_ORANGE_MS) chip.classList.add('wait20');
+          chip.innerHTML = `
+            <span class="player-name" title="${p.name}">${p.name}</span>
+            <span class="plays">${p.plays}</span>
+            <span class="timer">${fmtTime(waitedMs)}</span>
+            <div class="chip-actions"><button class="chip-x" title="Send back to queue">x</button></div>
+          `;
+          chip.querySelector('.chip-x').addEventListener('click', ()=>{
+            moveToQueueBottom(id, {resetWait:false});
+          });
+          makeDraggableChip(chip, id, {type:'waiting', list:i, team:'teamA'});
+          teamABox.appendChild(chip);
+        });
+        state.waiting[i].teamB.forEach(id=>{
+          const p = getPlayer(id); if(!p) return;
+          const waitedMs = now() - (p.waitStart || now());
+          const chip = document.createElement('div');
+          chip.className = 'player-chip';
+          if(waitedMs >= WAIT_ORANGE_MS) chip.classList.add('wait20');
+          chip.innerHTML = `
+            <span class="player-name" title="${p.name}">${p.name}</span>
+            <span class="plays">${p.plays}</span>
+            <span class="timer">${fmtTime(waitedMs)}</span>
+            <div class="chip-actions"><button class="chip-x" title="Send back to queue">x</button></div>
+          `;
+          chip.querySelector('.chip-x').addEventListener('click', ()=>{
+            moveToQueueBottom(id, {resetWait:false});
+          });
+          makeDraggableChip(chip, id, {type:'waiting', list:i, team:'teamB'});
+          teamBBox.appendChild(chip);
+        });
+
+        // Droppable areas (capacity 2)
+        makeDroppable(teamABox, (id)=>{
+          const t = state.waiting[i].teamA;
+          if(!canDropToTeam(t)) return;
+          // Remove from elsewhere
+          state.queue = state.queue.filter(x=>x!==id);
+          state.waiting[i].teamA = state.waiting[i].teamA.filter(x=>x!==id);
+          state.waiting[i].teamB = state.waiting[i].teamB.filter(x=>x!==id);
+          for(const j of [1,2,3,4]){
+            if(j===i) continue;
+            state.waiting[j].teamA = state.waiting[j].teamA.filter(x=>x!==id);
+            state.waiting[j].teamB = state.waiting[j].teamB.filter(x=>x!==id);
+          }
+          state.courts.forEach(c=>{
+            c.teamA = c.teamA.filter(x=>x!==id);
+            c.teamB = c.teamB.filter(x=>x!==id);
+          });
+          // Add
+          state.waiting[i].teamA.push(id);
+          save();
+        });
+        makeDroppable(teamBBox, (id)=>{
+          const t = state.waiting[i].teamB;
+          if(!canDropToTeam(t)) return;
+          // Remove from elsewhere
+          state.queue = state.queue.filter(x=>x!==id);
+          state.waiting[i].teamA = state.waiting[i].teamA.filter(x=>x!==id);
+          state.waiting[i].teamB = state.waiting[i].teamB.filter(x=>x!==id);
+          for(const j of [1,2,3,4]){
+            if(j===i) continue;
+            state.waiting[j].teamA = state.waiting[j].teamA.filter(x=>x!==id);
+            state.waiting[j].teamB = state.waiting[j].teamB.filter(x=>x!==id);
+          }
+          state.courts.forEach(c=>{
+            c.teamA = c.teamA.filter(x=>x!==id);
+            c.teamB = c.teamB.filter(x=>x!==id);
+          });
+          // Add
+          state.waiting[i].teamB.push(id);
+          save();
+        });
+
+        box.appendChild(teamABox);
+        box.appendChild(teamBBox);
+        waitingListsEl.appendChild(box);
+      });
+    }
+
+    function renderCourts(){
+      courtsContainerEl.innerHTML = '';
+      state.courts.forEach(c=>{
+        const courtEl = document.createElement('div');
+        courtEl.className = 'court';
+
+        const hdr = document.createElement('div');
+        hdr.className = 'court-header';
+        hdr.innerHTML = `
+          <span class="court-title">${c.name}</span>
+          <span class="court-timer" id="timer-${c.id}">${c.startedAt?('Playing '+fmtTime(now()-c.startedAt)):'Not started'}</span>
+        `;
+
+        const teamsEl = document.createElement('div');
+        teamsEl.className = 'court-teams';
 
         // Team A
-        row.appendChild(renderTeamBox({
-          title: 'Team A',
-          team: 'A',
-          colorClass: 'red',
-          droppable: { type: 'waiting', waitingId: w.id, team: 'A' },
-          players: w.teams.A.map(id => state.players[id]).filter(Boolean),
-          onRemove: (pid) => moveToQueue(pid, { appendToEnd: true, resumeTimer: true })
-        }));
+        const teamABox = document.createElement('div');
+        teamABox.className = 'team team-a';
+        teamABox.innerHTML = `<div class="team-label" style="color:${getComputedStyle(document.body).getPropertyValue('--red').trim()}">Team A</div>`;
+        c.teamA.forEach(id=>{
+          const p = getPlayer(id); if(!p) return;
+          const waitedMs = now() - (p.waitStart || now()); // waiting timer continues and displays here, not reset
+          const chip = document.createElement('div');
+          chip.className = 'player-chip';
+          if(waitedMs >= WAIT_ORANGE_MS) chip.classList.add('wait20');
+          chip.innerHTML = `
+            <span class="player-name" title="${p.name}">${p.name}</span>
+            <span class="plays">${p.plays}</span>
+            <span class="timer">${fmtTime(waitedMs)}</span>
+            <div class="chip-actions"><button class="chip-x" title="Send back to queue">x</button></div>
+          `;
+          chip.querySelector('.chip-x').addEventListener('click', ()=>{
+            // X returns to queue, no reset (not ended game)
+            moveToQueueBottom(id, {resetWait:false});
+          });
+          makeDraggableChip(chip, id, {type:'court', courtId:c.id, team:'teamA'});
+          teamABox.appendChild(chip);
+        });
 
         // Team B
-        row.appendChild(renderTeamBox({
-          title: 'Team B',
-          team: 'B',
-          colorClass: 'blue',
-          droppable: { type: 'waiting', waitingId: w.id, team: 'B' },
-          players: w.teams.B.map(id => state.players[id]).filter(Boolean),
-          onRemove: (pid) => moveToQueue(pid, { appendToEnd: true, resumeTimer: true })
-        }));
+        const teamBBox = document.createElement('div');
+        teamBBox.className = 'team team-b';
+        teamBBox.innerHTML = `<div class="team-label" style="color:${getComputedStyle(document.body).getPropertyValue('--blue').trim()}">Team B</div>`;
+        c.teamB.forEach(id=>{
+          const p = getPlayer(id); if(!p) return;
+          const waitedMs = now() - (p.waitStart || now());
+          const chip = document.createElement('div');
+          chip.className = 'player-chip';
+          if(waitedMs >= WAIT_ORANGE_MS) chip.classList.add('wait20');
+          chip.innerHTML = `
+            <span class="player-name" title="${p.name}">${p.name}</span>
+            <span class="plays">${p.plays}</span>
+            <span class="timer">${fmtTime(waitedMs)}</span>
+            <div class="chip-actions"><button class="chip-x" title="Send back to queue">x</button></div>
+          `;
+          chip.querySelector('.chip-x').addEventListener('click', ()=>{
+            moveToQueueBottom(id, {resetWait:false});
+          });
+          makeDraggableChip(chip, id, {type:'court', courtId:c.id, team:'teamB'});
+          teamBBox.appendChild(chip);
+        });
 
-        wrap.appendChild(row);
-        container.appendChild(wrap);
-      });
-    }
+        // Droppable areas (capacity 2)
+        makeDroppable(teamABox, (id)=>{
+          const t = c.teamA;
+          if(!canDropToTeam(t)) return;
+          // Remove from elsewhere
+          state.queue = state.queue.filter(x=>x!==id);
+          for(const i of [1,2,3,4]){
+            state.waiting[i].teamA = state.waiting[i].teamA.filter(x=>x!==id);
+            state.waiting[i].teamB = state.waiting[i].teamB.filter(x=>x!==id);
+          }
+          state.courts.forEach(cc=>{
+            cc.teamA = cc.teamA.filter(x=>x!==id);
+            cc.teamB = cc.teamB.filter(x=>x!==id);
+          });
+          // Add
+          c.teamA.push(id);
+          save();
+        });
+        makeDroppable(teamBBox, (id)=>{
+          const t = c.teamB;
+          if(!canDropToTeam(t)) return;
+          // Remove from elsewhere
+          state.queue = state.queue.filter(x=>x!==id);
+          for(const i of [1,2,3,4]){
+            state.waiting[i].teamA = state.waiting[i].teamA.filter(x=>x!==id);
+            state.waiting[i].teamB = state.waiting[i].teamB.filter(x=>x!==id);
+          }
+          state.courts.forEach(cc=>{
+            cc.teamA = cc.teamA.filter(x=>x!==id);
+            cc.teamB = cc.teamB.filter(x=>x!==id);
+          });
+          // Add
+          c.teamB.push(id);
+          save();
+        });
 
-    function renderCourts() {
-      const container = document.getElementById('courtsContainer');
-      container.innerHTML = '';
-      state.courts.forEach((c, index) => {
-        const court = document.createElement('div');
-        court.className = 'court';
-        const head = document.createElement('header');
-        const title = document.createElement('div');
-        title.className = 'court-title';
-        title.textContent = c.name;
-        const info = document.createElement('div');
-        info.className = 'small';
-        info.textContent = c.status === 'running' ? `Started: ${new Date(c.startTime).toLocaleTimeString()}` : 'Idle';
-        head.appendChild(title);
-        head.appendChild(info);
-        court.appendChild(head);
-
-        const row = document.createElement('div');
-        row.className = 'row';
-
-        // Team A
-        row.appendChild(renderTeamBox({
-          title: 'Team A',
-          team: 'A',
-          colorClass: 'red',
-          droppable: { type: 'court', courtId: c.id, team: 'A' },
-          players: c.teams.A.map(id => state.players[id]).filter(Boolean),
-          onRemove: (pid) => moveToQueue(pid, { appendToEnd: true, resumeTimer: true })
-        }));
-
-        // Team B
-        row.appendChild(renderTeamBox({
-          title: 'Team B',
-          team: 'B',
-          colorClass: 'blue',
-          droppable: { type: 'court', courtId: c.id, team: 'B' },
-          players: c.teams.B.map(id => state.players[id]).filter(Boolean),
-          onRemove: (pid) => moveToQueue(pid, { appendToEnd: true, resumeTimer: true })
-        }));
-
-        court.appendChild(row);
+        teamsEl.appendChild(teamABox);
+        teamsEl.appendChild(teamBBox);
 
         const controls = document.createElement('div');
         controls.className = 'court-controls';
         const startBtn = document.createElement('button');
         startBtn.textContent = 'Start';
-        startBtn.onclick = () => startCourt(c.id);
+        startBtn.className = 'primary';
+        startBtn.disabled = !!c.startedAt || c.teamA.length<2 || c.teamB.length<2;
+        startBtn.addEventListener('click', ()=> startCourt(c.id));
+
         const endBtn = document.createElement('button');
         endBtn.textContent = 'End';
-        endBtn.onclick = () => endCourt(c.id);
+        endBtn.className = 'btn';
+        endBtn.disabled = !c.startedAt;
+        endBtn.addEventListener('click', ()=> endCourt(c.id));
+
         controls.appendChild(startBtn);
         controls.appendChild(endBtn);
-        court.appendChild(controls);
 
-        container.appendChild(court);
+        courtEl.appendChild(hdr);
+        courtEl.appendChild(teamsEl);
+        courtEl.appendChild(controls);
+
+        courtsContainerEl.appendChild(courtEl);
       });
     }
 
-    function renderHistory() {
-      const container = document.getElementById('historyContainer');
-      container.innerHTML = '';
-      if (state.history.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'help';
-        empty.textContent = 'No matches yet.';
-        container.appendChild(empty);
-        return;
-      }
-      state.history.slice().reverse().forEach(h => {
+    function renderHistory(){
+      historyListEl.innerHTML = '';
+      state.history.forEach(h=>{
         const item = document.createElement('div');
         item.className = 'history-item';
         item.innerHTML = `
-          <div><strong>${h.courtName}</strong> — ${new Date(h.startedAt).toLocaleString()} to ${new Date(h.endedAt).toLocaleString()}</div>
-          <div>Team A: ${h.teamA.map(id => state.players[id]?.name || '(unknown)').join(', ')}</div>
-          <div>Team B: ${h.teamB.map(id => state.players[id]?.name || '(unknown)').join(', ')}</div>
-          <div>Duration: ${msToHMS(h.durationMs)}</div>
+          <div><strong>${h.courtName}</strong> • ${new Date(h.endedAt).toLocaleString()}</div>
+          <div>Team A: ${h.teamA.join(', ') || '-'}</div>
+          <div>Team B: ${h.teamB.join(', ') || '-'}</div>
+          <div>Duration: ${fmtTime(h.durationMs)}</div>
         `;
-        container.appendChild(item);
+        historyListEl.appendChild(item);
       });
     }
 
-    function renderPayments() {
-      const list = document.getElementById('paymentsList');
-      list.innerHTML = '';
-      state.payments.slice().reverse().forEach(p => {
-        const row = document.createElement('div');
-        row.className = 'row';
-        row.innerHTML = `
-          <div class="pill">${new Date(p.timestamp).toLocaleString()}</div>
-          <div class="pill">${p.name}</div>
-          <div class="pill">${p.method}</div>
-          <div class="pill">₱${Number(p.amount).toFixed(2)}</div>
+    function renderPayments(){
+      paymentsTBodyEl.innerHTML = '';
+      let cash = 0, gcash = 0;
+      state.payments.forEach(p=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.name}</td>
+          <td>${Number(p.amount).toFixed(2)}</td>
+          <td>${p.method}</td>
+          <td>${new Date(p.time).toLocaleString()}</td>
         `;
-        list.appendChild(row);
+        paymentsTBodyEl.appendChild(tr);
+        if(p.method==='cash') cash += Number(p.amount||0);
+        else gcash += Number(p.amount||0);
       });
-      const cash = state.payments.filter(p => p.method==='cash').reduce((a,b)=>a+Number(b.amount||0),0);
-      const gcash = state.payments.filter(p => p.method==='gcash').reduce((a,b)=>a+Number(b.amount||0),0);
-      const grand = cash + gcash;
-      document.getElementById('totalCash').textContent = `Total cash: ₱${cash.toFixed(2)}`;
-      document.getElementById('totalGcash').textContent = `Total GCash: ₱${gcash.toFixed(2)}`;
-      document.getElementById('grandTotal').textContent = `Grand total: ₱${grand.toFixed(2)}`;
+      cashTotalEl.textContent = `Cash: ${cash.toFixed(2)}`;
+      gcashTotalEl.textContent = `GCash: ${gcash.toFixed(2)}`;
+      grandTotalEl.textContent = `Grand total: ${(cash+gcash).toFixed(2)}`;
     }
 
-    function renderPlayerItem(p, { showLocation=false, onRemove=null } = {}) {
-      const el = document.createElement('div');
-      el.className = 'player';
-      el.draggable = true;
-      el.dataset.pid = p.id;
-
-      if (isOrange(p)) el.classList.add('orange');
-
-      const left = document.createElement('div');
-      left.className = 'meta';
-      const name = document.createElement('div');
-      name.className = 'name';
-      name.textContent = p.name;
-      const timer = document.createElement('div');
-      timer.className = 'timer';
-      timer.textContent = `Waiting: ${msToHMS(playerWaitingMs(p))}`;
-      left.appendChild(name);
-      left.appendChild(timer);
-
-      const right = document.createElement('div');
-      right.className = 'actions';
-
-      if (showLocation) {
-        const loc = document.createElement('span');
-        loc.className = 'pill';
-        loc.textContent = locationLabel(p.location);
-        right.appendChild(loc);
-      }
-
-      const x = document.createElement('button');
-      x.className = 'btn-x';
-      x.textContent = '×';
-      x.title = 'Remove';
-      x.onclick = (e) => {
-        e.stopPropagation();
-        if (onRemove) onRemove(p.id);
-      };
-      right.appendChild(x);
-
-      el.appendChild(left);
-      el.appendChild(right);
-
-      // Drag events
-      el.addEventListener('dragstart', (ev) => {
-        ev.dataTransfer.setData('text/plain', p.id);
-        el.classList.add('dragging');
-      });
-      el.addEventListener('dragend', () => el.classList.remove('dragging'));
-
-      return el;
-    }
-
-    function locationLabel(loc) {
-      if (!loc) return 'Unknown';
-      if (loc.type === 'queue') return 'Queue';
-      if (loc.type === 'waiting') return `Waiting ${loc.waitingId.toUpperCase()} • Team ${loc.team}`;
-      if (loc.type === 'court') return `Court ${loc.courtId.toUpperCase()} • Team ${loc.team}`;
-      return 'Unknown';
-    }
-
-    function renderTeamBox({ title, team, colorClass, droppable, players, onRemove }) {
-      const wrap = document.createElement('div');
-      wrap.className = 'team';
-      const head = document.createElement('header');
-      const h = document.createElement('h3');
-      h.textContent = title;
-      const badge = document.createElement('span');
-      badge.className = `badge ${colorClass}`;
-      badge.textContent = `Max 2`;
-      head.appendChild(h);
-      head.appendChild(badge);
-      wrap.appendChild(head);
-
-      const list = document.createElement('div');
-      list.className = 'list';
-      list.dataset.dropzone = JSON.stringify(droppable);
-      players.forEach(p => {
-        const item = renderPlayerItem(p, { onRemove });
-        list.appendChild(item);
-      });
-
-      // Drag-over/dropping
-      addDropHandlers(list);
-      wrap.appendChild(list);
-      return wrap;
-    }
-
-    // --- Drag & drop ---
-    function addDropHandlers(el) {
-      el.addEventListener('dragover', (ev) => {
-        ev.preventDefault();
-        el.classList.add('droppable-highlight');
-      });
-      el.addEventListener('dragleave', () => el.classList.remove('droppable-highlight'));
-      el.addEventListener('drop', (ev) => {
-        ev.preventDefault();
-        el.classList.remove('droppable-highlight');
-        const pid = ev.dataTransfer.getData('text/plain');
-        const p = state.players[pid];
-        if (!p) return;
-
-        const zone = el.dataset.dropzone;
-        if (!zone) return;
-        if (zone === 'queue') {
-          moveToQueue(pid, { appendToEnd: true, resumeTimer: true });
-          return;
-        }
-        try {
-          const target = JSON.parse(zone);
-          if (target.type === 'waiting') {
-            moveToWaiting(pid, target.waitingId, target.team);
-          } else if (target.type === 'court') {
-            moveToCourt(pid, target.courtId, target.team);
-          }
-        } catch(e) { /* noop */ }
-      });
-    }
-
-    // Register drop handlers on queue list
-    addDropHandlers(document.getElementById('queueList'));
-
-    // --- Actions: queue ---
-    function addPlayerToQueue(name) {
-      const id = uid('p');
-      const player = {
-        id,
-        name: name.trim(),
-        timerStartAt: now(), // start timer upon adding
-        lastMovedAt: now(),
-        location: { type: 'queue' },
-      };
-      state.players[id] = player;
-      state.queue.push(id);
-      renderAll();
-    }
-
-    function removeFromQueue(pid) {
-      // Remove entirely from app (mistaken entry)
-      deleteFromAll(pid);
-      renderAll();
-    }
-
-    function moveToQueue(pid, { appendToEnd=true, resumeTimer=true } = {}) {
-      // Remove from other containers
-      removeFromContainersOnly(pid);
-      const existsIndex = state.queue.indexOf(pid);
-      if (existsIndex !== -1) {
-        state.queue.splice(existsIndex, 1); // we'll re-add at end to avoid duplicates
-      }
-      if (appendToEnd) state.queue.push(pid);
-      else state.queue.unshift(pid);
-
-      const p = state.players[pid];
-      if (p) {
-        p.location = { type: 'queue' };
-        if (!resumeTimer) p.timerStartAt = now(); // by default we resume; only reset after game end
-        p.lastMovedAt = now();
-      }
-      renderAll();
-    }
-
-    function deleteFromAll(pid) {
-      removeFromContainersOnly(pid);
-      const i = state.queue.indexOf(pid);
-      if (i >= 0) state.queue.splice(i,1);
-      delete state.players[pid];
-    }
-
-    function removeFromContainersOnly(pid) {
-      // Waiting lists
-      state.waitingLists.forEach(w => {
-        ['A','B'].forEach(t => {
-          const i = w.teams[t].indexOf(pid);
-          if (i>=0) w.teams[t].splice(i,1);
-        });
-      });
-      // Courts
-      state.courts.forEach(c => {
-        ['A','B'].forEach(t => {
-          const i = c.teams[t].indexOf(pid);
-          if (i>=0) c.teams[t].splice(i,1);
-        });
-      });
-    }
-
-    // --- Actions: waiting lists ---
-    function moveToWaiting(pid, waitingId, team) {
-      const w = state.waitingLists.find(x => x.id === waitingId);
-      if (!w) return;
-      const teamArr = w.teams[team];
-      if (!teamArr) return;
-      if (teamArr.length >= 2) {
-        alert(`Team ${team} in ${w.name} is full (2 players max).`);
-        return;
-      }
-      // Remove from where it is
-      removeFromContainersOnly(pid);
-      const qi = state.queue.indexOf(pid);
-      if (qi>=0) state.queue.splice(qi,1);
-      teamArr.push(pid);
-      const p = state.players[pid];
-      if (p) {
-        p.location = { type: 'waiting', waitingId, team };
-        // Resume timer (no reset)
-        p.lastMovedAt = now();
-      }
-      renderAll();
-    }
-
-    // --- Actions: courts ---
-    function addCourt() {
-      const id = uid('c');
-      const court = { id, name: `Court ${state.courts.length+1}`, teams: { A: [], B: [] }, status: 'idle', startTime: null };
-      state.courts.push(court);
-      renderAll();
-    }
-
-    function moveToCourt(pid, courtId, team) {
-      const c = state.courts.find(x => x.id === courtId);
-      if (!c) return;
-      const teamArr = c.teams[team];
-      if (!teamArr) return;
-      if (teamArr.length >= 2) {
-        alert(`Court ${c.name} Team ${team} is full (2 players max).`);
-        return;
-      }
-      // Remove from previous location
-      removeFromContainersOnly(pid);
-      const qi = state.queue.indexOf(pid);
-      if (qi>=0) state.queue.splice(qi,1);
-      teamArr.push(pid);
-      const p = state.players[pid];
-      if (p) {
-        p.location = { type: 'court', courtId, team };
-        // Resume timer (no reset)
-        p.lastMovedAt = now();
-      }
-      renderAll();
-    }
-
-    function canStartCourt(courtId) {
-      const c = state.courts.find(x => x.id === courtId);
-      if (!c) return false;
-      return c.teams.A.length === 2 && c.teams.B.length === 2 && c.status !== 'running';
-    }
-
-    function startCourt(courtId) {
-      const c = state.courts.find(x => x.id === courtId);
-      if (!c) return;
-      if (!canStartCourt(courtId)) {
-        alert('Both teams must have 2 players to start.');
-        return;
-      }
-      c.status = 'running';
-      c.startTime = now();
-      renderAll();
-    }
-
-    function endCourt(courtId) {
-      const c = state.courts.find(x => x.id === courtId);
-      if (!c) return;
-      if (c.status !== 'running') {
-        alert('Court is not running.');
-        return;
-      }
-      const endT = now();
-      const hist = {
-        courtId: c.id,
-        courtName: c.name,
-        teamA: c.teams.A.slice(),
-        teamB: c.teams.B.slice(),
-        startedAt: c.startTime,
-        endedAt: endT,
-        durationMs: endT - c.startTime
-      };
-      state.history.push(hist);
-
-      // Move players back to bottom of queue and restart their timers
-      const returning = [...c.teams.A, ...c.teams.B];
-      c.teams.A = [];
-      c.teams.B = [];
-      c.status = 'idle';
-      c.startTime = null;
-
-      returning.forEach(pid => {
-        // append to end and reset timerStartAt
-        const p = state.players[pid];
-        if (p) p.timerStartAt = now();
-        moveToQueue(pid, { appendToEnd: true, resumeTimer: false });
-      });
-
-      renderAll();
-    }
-
-    // --- Payments ---
-    function addPayment() {
-      const name = document.getElementById('payName').value.trim();
-      const amount = parseFloat(document.getElementById('payAmount').value);
-      const method = document.getElementById('payMethod').value;
-      if (!name) return alert('Enter player name.');
-      if (!(amount > 0)) return alert('Enter a valid amount.');
-      const p = { id: uid('pay'), name, amount, method, timestamp: now() };
-      state.payments.push(p);
-      document.getElementById('payName').value = '';
-      document.getElementById('payAmount').value = '';
+    function bumpUI(){
+      renderQueue();
+      renderWaiting();
+      renderCourts();
+      renderHistory();
       renderPayments();
-      saveState();
     }
 
-    function exportPaymentsCSV() {
-      const headers = ['Timestamp','Name','Method','Amount'];
-      const rows = state.payments.map(p => [
-        new Date(p.timestamp).toLocaleString(),
-        p.name,
-        p.method,
-        Number(p.amount).toFixed(2)
-      ]);
-      const csv = [headers, ...rows].map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'payments.csv'; // Excel-compatible
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
+    // --- Timers (UI refresh) ---
+    setInterval(()=>{
+      // Re-render only timers-centric parts efficiently
+      renderQueue();
+      renderWaiting();
+      renderCourts();
+    }, 1000);
 
-    // --- Clear data ---
-    function clearData() {
-      if (!confirm('Clear all current data? This cannot be undone.')) return;
-      // Reset state
-      state.players = {};
-      state.queue = [];
-      state.waitingLists = [
-        { id: 'w1', name: 'Waiting list 1', teams: { A: [], B: [] } },
-        { id: 'w2', name: 'Waiting list 2', teams: { A: [], B: [] } },
-        { id: 'w3', name: 'Waiting list 3', teams: { A: [], B: [] } },
-        { id: 'w4', name: 'Waiting list 4', teams: { A: [], B: [] } },
-      ];
-      state.courts = [];
-      state.history = [];
-      state.payments = [];
-      renderAll();
-    }
-
-    // --- Inputs & init ---
-    document.getElementById('queueInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const name = e.target.value.trim();
-        if (!name) return;
-        addPlayerToQueue(name);
-        e.target.value = '';
+    // --- Event bindings ---
+    const playerInputEl = document.getElementById('playerInput');
+    playerInputEl.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter'){
+        addPlayerToQueue(playerInputEl.value);
+        playerInputEl.value = '';
       }
     });
 
     document.getElementById('addCourtBtn').addEventListener('click', addCourt);
-    document.getElementById('addPaymentBtn').addEventListener('click', addPayment);
-    document.getElementById('exportPaymentsBtn').addEventListener('click', exportPaymentsCSV);
+    document.getElementById('saveBtn').addEventListener('click', save);
     document.getElementById('clearDataBtn').addEventListener('click', clearData);
 
-    // Timer ticker for UI updates (waiting timers + orange coloring)
-    setInterval(() => {
-      // Re-render lightweight parts: queue & lists & courts (for timers)
-      renderQueue();
-      renderWaiting();
-      renderCourts();
-      // history/payments unaffected by timer
-    }, 1000);
+    // Payments
+    document.getElementById('addPaymentBtn').addEventListener('click', ()=>{
+      const name = document.getElementById('paymentName').value.trim();
+      const amount = parseFloat(document.getElementById('paymentAmount').value);
+      const method = document.getElementById('paymentMethod').value;
+      if(!name || isNaN(amount) || amount<=0){ alert('Enter a valid name and amount.'); return; }
+      state.payments.unshift({name, amount, method, time: now()});
+      document.getElementById('paymentName').value='';
+      document.getElementById('paymentAmount').value='';
+      save();
+    });
 
-    // Load initial state & render
-    loadState();
-    renderAll();
+    // Export payments as CSV (Excel-readable)
+    document.getElementById('exportPaymentsBtn').addEventListener('click', ()=>{
+      const rows = [['Name','Amount','Method','Time']];
+      state.payments.forEach(p=>{
+        rows.push([p.name, Number(p.amount).toFixed(2), p.method, new Date(p.time).toLocaleString()]);
+      });
+      const csv = rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'payments.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // --- Initialize ---
+    load();
+    bumpUI();
   </script>
 </body>
 </html>
