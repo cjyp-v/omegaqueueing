@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Omega Cock Queueing App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg: #ffffff;
+      --text: #111;
+      --muted: #666;
+      --accent: #0d6efd;
+      --danger: #dc3545;
+      --orange: #ff9800;
+      --green: #2e7d32;
+      --redTeam: #ff5252;
+      --blueTeam: #2979ff;
+      --border: #ddd;
+      --panel: #f7f7f9;
+    }
+    html, body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif; margin:0; }
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+      background: #fff;
+    }
+    header h1 { margin:0; font-size: 20px; font-weight: 700; }
+    .controls { display:flex; gap:8px; flex-wrap:wrap; }
+    .controls button, .controls input, .controls select {
+      padding:8px 10px; border:1px solid var(--border); background:#fff; border-radius:6px; font-size:13px;
+    }
+    .controls button { cursor:pointer; }
+    .controls .primary { background: var(--accent); color:#fff; border-color: var(--accent); }
+    .container { padding: 16px 20px; display:grid; gap:16px; }
+    /* Top 3-grid */
+    .top-grid {
+      display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px;
+    }
+    /* Bottom 2-grid */
+    .bottom-grid {
+      display:grid; grid-template-columns: 1.2fr 0.8fr; gap:16px;
+    }
+    .panel {
+      background:#fff; border:1px solid var(--border); border-radius:8px; overflow:hidden;
+      display:flex; flex-direction:column; min-height: 260px;
+    }
+    .panel header {
+      background: var(--panel); border-bottom: 1px solid var(--border);
+    }
+    .panel header h2 { margin:0; font-size:16px; }
+    .panel .body { padding:12px; display:flex; gap:12px; flex:1; }
+    .panel .section-title { font-weight:600; font-size:13px; color:var(--muted); margin-bottom:8px; }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .stack { display:flex; flex-direction:column; gap:6px; }
+    .queue-input { display:flex; gap:8px; }
+    .queue-input input { flex:1; }
+    .list {
+      border:1px dashed var(--border);
+      border-radius:8px; padding:8px;
+      min-height: 160px; background:#fff;
+    }
+    .droppable-highlight { border-color: var(--accent) !important; background: #f0f7ff !important; }
+    .team {
+      flex:1; min-width:160px;
+    }
+    .team header { display:flex; align-items:center; justify-content:space-between; }
+    .team h3 { margin:0; font-size:14px; }
+    .team .badge { font-size:12px; color:#fff; padding:2px 8px; border-radius:12px; }
+    .badge.red { background: var(--redTeam); }
+    .badge.blue { background: var(--blueTeam); }
+    .player {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:8px; padding:8px; border:1px solid var(--border); border-radius:6px; background:#fff; margin-bottom:6px;
+    }
+    .player.dragging { opacity: 0.5; }
+    .player .meta { display:flex; flex-direction:column; gap:2px; }
+    .player .name { font-weight:600; font-size:13px; }
+    .player .timer { font-size:12px; color:var(--muted); }
+    .player .actions { display:flex; gap:6px; align-items:center; }
+    .pill { font-size:11px; border:1px solid var(--border); padding:2px 6px; border-radius:999px; color:var(--muted); }
+    .btn-x {
+      width:22px; height:22px; border-radius:50%; border:1px solid var(--border); background:#fff; color:var(--danger);
+      display:grid; place-items:center; cursor:pointer; font-weight:700; line-height:1;
+    }
+    .orange { background: #fff7e6; border-color: #ffe0b3; }
+    .court-controls { display:flex; gap:8px; }
+    .court-controls button { padding:6px 10px; font-size:12px; }
+    .court {
+      border:1px solid var(--border); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:8px; background:#fff;
+    }
+    .court header { display:flex; align-items:center; justify-content:space-between; }
+    .court-title { font-weight:700; }
+    .small { font-size:12px; color:var(--muted); }
+    .history-item {
+      border:1px solid var(--border); border-radius:8px; padding:8px; background:#fff; margin-bottom:8px;
+    }
+    .payment-row {
+      display:flex; gap:8px; align-items:center; margin-bottom:8px;
+    }
+    .payment-row input, .payment-row select { padding:6px 8px; border:1px solid var(--border); border-radius:6px; }
+    .totals { display:flex; gap:12px; flex-wrap:wrap; margin-top:8px; }
+    .totals .total { border:1px solid var(--border); border-radius:8px; padding:8px; background:#fff; }
+    .footer-controls { display:flex; gap:8px; flex-wrap:wrap; padding: 10px 12px; border-top:1px solid var(--border); background: var(--panel); }
+    .help { font-size:12px; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Omega Cock Queueing App</h1>
+    <div class="controls">
+      <button id="clearDataBtn" class="danger">Clear current data</button>
+      <span class="help">Drag names across Queueing, Waiting Lists, and Courts. Game end returns players to queue.</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Top grid: queue | waiting | courts -->
+    <div class="top-grid">
+      <!-- Queueing list -->
+      <section class="panel" id="queuePanel">
+        <header>
+          <h2>Queueing list</h2>
+        </header>
+        <div class="body stack">
+          <div class="queue-input">
+            <input type="text" id="queueInput" placeholder="Type player name and press Enter" />
+            <span class="pill" id="totalPlayersPill">Total: 0</span>
+          </div>
+          <div id="queueList" class="list" data-dropzone="queue"></div>
+        </div>
+        <div class="footer-controls">
+          <span class="help">Names turn orange after waiting 20 minutes.</span>
+        </div>
+      </section>
+
+      <!-- Waiting lists -->
+      <section class="panel" id="waitingPanel">
+        <header>
+          <h2>Waiting lists</h2>
+        </header>
+        <div class="body stack" id="waitingLists">
+          <!-- Waiting lists will render here -->
+        </div>
+      </section>
+
+      <!-- Courts -->
+      <section class="panel" id="courtsPanel">
+        <header>
+          <h2>Courts</h2>
+        </header>
+        <div class="body stack">
+          <div class="row">
+            <button id="addCourtBtn" class="primary">Add court</button>
+            <span class="help">Game won't start unless both teams have 2 players.</span>
+          </div>
+          <div id="courtsContainer" class="stack"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Bottom grid: history | payments -->
+    <div class="bottom-grid">
+      <!-- Match history -->
+      <section class="panel" id="historyPanel">
+        <header>
+          <h2>Match history</h2>
+        </header>
+        <div class="body stack" id="historyContainer"></div>
+      </section>
+
+      <!-- Payment -->
+      <section class="panel" id="paymentPanel">
+        <header>
+          <h2>Payment</h2>
+        </header>
+        <div class="body stack">
+          <div class="payment-row">
+            <input type="text" id="payName" placeholder="Player name" />
+            <input type="number" id="payAmount" placeholder="Amount" min="0" step="0.01" />
+            <select id="payMethod">
+              <option value="cash">Cash</option>
+              <option value="gcash">GCash</option>
+            </select>
+            <button id="addPaymentBtn" class="primary">Add payment</button>
+          </div>
+          <div id="paymentsList" class="stack"></div>
+          <div class="totals" id="paymentTotals">
+            <div class="total" id="totalCash">Total cash: 0</div>
+            <div class="total" id="totalGcash">Total GCash: 0</div>
+            <div class="total" id="grandTotal">Grand total: 0</div>
+          </div>
+        </div>
+        <div class="footer-controls">
+          <button id="exportPaymentsBtn">Export payments to Excel (CSV)</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // --- State management ---
+    const STORAGE_KEY = 'omegaCockQueueAppState';
+
+    const state = {
+      players: {}, // id -> {id,name,timerStartAt,lastMovedAt,location:{type:'queue'|'waiting'|'court', waitingId?, courtId?, team?}}
+      queue: [], // playerIds in order
+      waitingLists: [
+        { id: 'w1', name: 'Waiting list 1', teams: { A: [], B: [] } },
+        { id: 'w2', name: 'Waiting list 2', teams: { A: [], B: [] } },
+        { id: 'w3', name: 'Waiting list 3', teams: { A: [], B: [] } },
+        { id: 'w4', name: 'Waiting list 4', teams: { A: [], B: [] } },
+      ],
+      courts: [], // {id, name, teams:{A:[],B:[]}, status:'idle'|'running', startTime:null}
+      history: [], // {courtId,courtName,teamA,teamB,startedAt,endedAt,durationMs}
+      payments: [], // {id,name,amount,method,timestamp}
+    };
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      try {
+        const loaded = JSON.parse(raw);
+        // Shallow merge to keep defaults if missing
+        Object.assign(state, loaded);
+      } catch (e) {
+        console.warn('Failed to load state:', e);
+      }
+    }
+    // --- Utilities ---
+    function uid(prefix='id') {
+      return prefix + '_' + Math.random().toString(36).slice(2,9);
+    }
+    function now() { return Date.now(); }
+    function msToHMS(ms) {
+      const totalSec = Math.floor(ms/1000);
+      const h = Math.floor(totalSec/3600);
+      const m = Math.floor((totalSec%3600)/60);
+      const s = totalSec%60;
+      if (h>0) return `${h}h ${m}m ${s}s`;
+      return `${m}m ${s}s`;
+    }
+    function playerWaitingMs(p) {
+      return Math.max(0, now() - (p.timerStartAt ?? now()));
+    }
+    function isOrange(p) {
+      return playerWaitingMs(p) >= 20 * 60 * 1000; // 20 mins
+    }
+
+    // --- Rendering ---
+    function renderAll() {
+      renderQueue();
+      renderWaiting();
+      renderCourts();
+      renderHistory();
+      renderPayments();
+      saveState();
+    }
+
+    function renderQueue() {
+      const list = document.getElementById('queueList');
+      list.innerHTML = '';
+      state.queue.forEach(pid => {
+        const p = state.players[pid];
+        if (!p) return;
+        list.appendChild(renderPlayerItem(p, { showLocation: true, onRemove: () => removeFromQueue(pid) }));
+      });
+      document.getElementById('totalPlayersPill').textContent = `Total: ${state.queue.length}`;
+    }
+
+    function renderWaiting() {
+      const container = document.getElementById('waitingLists');
+      container.innerHTML = '';
+      state.waitingLists.forEach(w => {
+        const wrap = document.createElement('div');
+        wrap.className = 'stack';
+        const title = document.createElement('div');
+        title.className = 'section-title';
+        title.textContent = w.name;
+        wrap.appendChild(title);
+
+        const row = document.createElement('div');
+        row.className = 'row';
+
+        // Team A
+        row.appendChild(renderTeamBox({
+          title: 'Team A',
+          team: 'A',
+          colorClass: 'red',
+          droppable: { type: 'waiting', waitingId: w.id, team: 'A' },
+          players: w.teams.A.map(id => state.players[id]).filter(Boolean),
+          onRemove: (pid) => moveToQueue(pid, { appendToEnd: true, resumeTimer: true })
+        }));
+
+        // Team B
+        row.appendChild(renderTeamBox({
+          title: 'Team B',
+          team: 'B',
+          colorClass: 'blue',
+          droppable: { type: 'waiting', waitingId: w.id, team: 'B' },
+          players: w.teams.B.map(id => state.players[id]).filter(Boolean),
+          onRemove: (pid) => moveToQueue(pid, { appendToEnd: true, resumeTimer: true })
+        }));
+
+        wrap.appendChild(row);
+        container.appendChild(wrap);
+      });
+    }
+
+    function renderCourts() {
+      const container = document.getElementById('courtsContainer');
+      container.innerHTML = '';
+      state.courts.forEach((c, index) => {
+        const court = document.createElement('div');
+        court.className = 'court';
+        const head = document.createElement('header');
+        const title = document.createElement('div');
+        title.className = 'court-title';
+        title.textContent = c.name;
+        const info = document.createElement('div');
+        info.className = 'small';
+        info.textContent = c.status === 'running' ? `Started: ${new Date(c.startTime).toLocaleTimeString()}` : 'Idle';
+        head.appendChild(title);
+        head.appendChild(info);
+        court.appendChild(head);
+
+        const row = document.createElement('div');
+        row.className = 'row';
+
+        // Team A
+        row.appendChild(renderTeamBox({
+          title: 'Team A',
+          team: 'A',
+          colorClass: 'red',
+          droppable: { type: 'court', courtId: c.id, team: 'A' },
+          players: c.teams.A.map(id => state.players[id]).filter(Boolean),
+          onRemove: (pid) => moveToQueue(pid, { appendToEnd: true, resumeTimer: true })
+        }));
+
+        // Team B
+        row.appendChild(renderTeamBox({
+          title: 'Team B',
+          team: 'B',
+          colorClass: 'blue',
+          droppable: { type: 'court', courtId: c.id, team: 'B' },
+          players: c.teams.B.map(id => state.players[id]).filter(Boolean),
+          onRemove: (pid) => moveToQueue(pid, { appendToEnd: true, resumeTimer: true })
+        }));
+
+        court.appendChild(row);
+
+        const controls = document.createElement('div');
+        controls.className = 'court-controls';
+        const startBtn = document.createElement('button');
+        startBtn.textContent = 'Start';
+        startBtn.onclick = () => startCourt(c.id);
+        const endBtn = document.createElement('button');
+        endBtn.textContent = 'End';
+        endBtn.onclick = () => endCourt(c.id);
+        controls.appendChild(startBtn);
+        controls.appendChild(endBtn);
+        court.appendChild(controls);
+
+        container.appendChild(court);
+      });
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('historyContainer');
+      container.innerHTML = '';
+      if (state.history.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'help';
+        empty.textContent = 'No matches yet.';
+        container.appendChild(empty);
+        return;
+      }
+      state.history.slice().reverse().forEach(h => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+          <div><strong>${h.courtName}</strong> — ${new Date(h.startedAt).toLocaleString()} to ${new Date(h.endedAt).toLocaleString()}</div>
+          <div>Team A: ${h.teamA.map(id => state.players[id]?.name || '(unknown)').join(', ')}</div>
+          <div>Team B: ${h.teamB.map(id => state.players[id]?.name || '(unknown)').join(', ')}</div>
+          <div>Duration: ${msToHMS(h.durationMs)}</div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function renderPayments() {
+      const list = document.getElementById('paymentsList');
+      list.innerHTML = '';
+      state.payments.slice().reverse().forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
+          <div class="pill">${new Date(p.timestamp).toLocaleString()}</div>
+          <div class="pill">${p.name}</div>
+          <div class="pill">${p.method}</div>
+          <div class="pill">₱${Number(p.amount).toFixed(2)}</div>
+        `;
+        list.appendChild(row);
+      });
+      const cash = state.payments.filter(p => p.method==='cash').reduce((a,b)=>a+Number(b.amount||0),0);
+      const gcash = state.payments.filter(p => p.method==='gcash').reduce((a,b)=>a+Number(b.amount||0),0);
+      const grand = cash + gcash;
+      document.getElementById('totalCash').textContent = `Total cash: ₱${cash.toFixed(2)}`;
+      document.getElementById('totalGcash').textContent = `Total GCash: ₱${gcash.toFixed(2)}`;
+      document.getElementById('grandTotal').textContent = `Grand total: ₱${grand.toFixed(2)}`;
+    }
+
+    function renderPlayerItem(p, { showLocation=false, onRemove=null } = {}) {
+      const el = document.createElement('div');
+      el.className = 'player';
+      el.draggable = true;
+      el.dataset.pid = p.id;
+
+      if (isOrange(p)) el.classList.add('orange');
+
+      const left = document.createElement('div');
+      left.className = 'meta';
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = p.name;
+      const timer = document.createElement('div');
+      timer.className = 'timer';
+      timer.textContent = `Waiting: ${msToHMS(playerWaitingMs(p))}`;
+      left.appendChild(name);
+      left.appendChild(timer);
+
+      const right = document.createElement('div');
+      right.className = 'actions';
+
+      if (showLocation) {
+        const loc = document.createElement('span');
+        loc.className = 'pill';
+        loc.textContent = locationLabel(p.location);
+        right.appendChild(loc);
+      }
+
+      const x = document.createElement('button');
+      x.className = 'btn-x';
+      x.textContent = '×';
+      x.title = 'Remove';
+      x.onclick = (e) => {
+        e.stopPropagation();
+        if (onRemove) onRemove(p.id);
+      };
+      right.appendChild(x);
+
+      el.appendChild(left);
+      el.appendChild(right);
+
+      // Drag events
+      el.addEventListener('dragstart', (ev) => {
+        ev.dataTransfer.setData('text/plain', p.id);
+        el.classList.add('dragging');
+      });
+      el.addEventListener('dragend', () => el.classList.remove('dragging'));
+
+      return el;
+    }
+
+    function locationLabel(loc) {
+      if (!loc) return 'Unknown';
+      if (loc.type === 'queue') return 'Queue';
+      if (loc.type === 'waiting') return `Waiting ${loc.waitingId.toUpperCase()} • Team ${loc.team}`;
+      if (loc.type === 'court') return `Court ${loc.courtId.toUpperCase()} • Team ${loc.team}`;
+      return 'Unknown';
+    }
+
+    function renderTeamBox({ title, team, colorClass, droppable, players, onRemove }) {
+      const wrap = document.createElement('div');
+      wrap.className = 'team';
+      const head = document.createElement('header');
+      const h = document.createElement('h3');
+      h.textContent = title;
+      const badge = document.createElement('span');
+      badge.className = `badge ${colorClass}`;
+      badge.textContent = `Max 2`;
+      head.appendChild(h);
+      head.appendChild(badge);
+      wrap.appendChild(head);
+
+      const list = document.createElement('div');
+      list.className = 'list';
+      list.dataset.dropzone = JSON.stringify(droppable);
+      players.forEach(p => {
+        const item = renderPlayerItem(p, { onRemove });
+        list.appendChild(item);
+      });
+
+      // Drag-over/dropping
+      addDropHandlers(list);
+      wrap.appendChild(list);
+      return wrap;
+    }
+
+    // --- Drag & drop ---
+    function addDropHandlers(el) {
+      el.addEventListener('dragover', (ev) => {
+        ev.preventDefault();
+        el.classList.add('droppable-highlight');
+      });
+      el.addEventListener('dragleave', () => el.classList.remove('droppable-highlight'));
+      el.addEventListener('drop', (ev) => {
+        ev.preventDefault();
+        el.classList.remove('droppable-highlight');
+        const pid = ev.dataTransfer.getData('text/plain');
+        const p = state.players[pid];
+        if (!p) return;
+
+        const zone = el.dataset.dropzone;
+        if (!zone) return;
+        if (zone === 'queue') {
+          moveToQueue(pid, { appendToEnd: true, resumeTimer: true });
+          return;
+        }
+        try {
+          const target = JSON.parse(zone);
+          if (target.type === 'waiting') {
+            moveToWaiting(pid, target.waitingId, target.team);
+          } else if (target.type === 'court') {
+            moveToCourt(pid, target.courtId, target.team);
+          }
+        } catch(e) { /* noop */ }
+      });
+    }
+
+    // Register drop handlers on queue list
+    addDropHandlers(document.getElementById('queueList'));
+
+    // --- Actions: queue ---
+    function addPlayerToQueue(name) {
+      const id = uid('p');
+      const player = {
+        id,
+        name: name.trim(),
+        timerStartAt: now(), // start timer upon adding
+        lastMovedAt: now(),
+        location: { type: 'queue' },
+      };
+      state.players[id] = player;
+      state.queue.push(id);
+      renderAll();
+    }
+
+    function removeFromQueue(pid) {
+      // Remove entirely from app (mistaken entry)
+      deleteFromAll(pid);
+      renderAll();
+    }
+
+    function moveToQueue(pid, { appendToEnd=true, resumeTimer=true } = {}) {
+      // Remove from other containers
+      removeFromContainersOnly(pid);
+      const existsIndex = state.queue.indexOf(pid);
+      if (existsIndex !== -1) {
+        state.queue.splice(existsIndex, 1); // we'll re-add at end to avoid duplicates
+      }
+      if (appendToEnd) state.queue.push(pid);
+      else state.queue.unshift(pid);
+
+      const p = state.players[pid];
+      if (p) {
+        p.location = { type: 'queue' };
+        if (!resumeTimer) p.timerStartAt = now(); // by default we resume; only reset after game end
+        p.lastMovedAt = now();
+      }
+      renderAll();
+    }
+
+    function deleteFromAll(pid) {
+      removeFromContainersOnly(pid);
+      const i = state.queue.indexOf(pid);
+      if (i >= 0) state.queue.splice(i,1);
+      delete state.players[pid];
+    }
+
+    function removeFromContainersOnly(pid) {
+      // Waiting lists
+      state.waitingLists.forEach(w => {
+        ['A','B'].forEach(t => {
+          const i = w.teams[t].indexOf(pid);
+          if (i>=0) w.teams[t].splice(i,1);
+        });
+      });
+      // Courts
+      state.courts.forEach(c => {
+        ['A','B'].forEach(t => {
+          const i = c.teams[t].indexOf(pid);
+          if (i>=0) c.teams[t].splice(i,1);
+        });
+      });
+    }
+
+    // --- Actions: waiting lists ---
+    function moveToWaiting(pid, waitingId, team) {
+      const w = state.waitingLists.find(x => x.id === waitingId);
+      if (!w) return;
+      const teamArr = w.teams[team];
+      if (!teamArr) return;
+      if (teamArr.length >= 2) {
+        alert(`Team ${team} in ${w.name} is full (2 players max).`);
+        return;
+      }
+      // Remove from where it is
+      removeFromContainersOnly(pid);
+      const qi = state.queue.indexOf(pid);
+      if (qi>=0) state.queue.splice(qi,1);
+      teamArr.push(pid);
+      const p = state.players[pid];
+      if (p) {
+        p.location = { type: 'waiting', waitingId, team };
+        // Resume timer (no reset)
+        p.lastMovedAt = now();
+      }
+      renderAll();
+    }
+
+    // --- Actions: courts ---
+    function addCourt() {
+      const id = uid('c');
+      const court = { id, name: `Court ${state.courts.length+1}`, teams: { A: [], B: [] }, status: 'idle', startTime: null };
+      state.courts.push(court);
+      renderAll();
+    }
+
+    function moveToCourt(pid, courtId, team) {
+      const c = state.courts.find(x => x.id === courtId);
+      if (!c) return;
+      const teamArr = c.teams[team];
+      if (!teamArr) return;
+      if (teamArr.length >= 2) {
+        alert(`Court ${c.name} Team ${team} is full (2 players max).`);
+        return;
+      }
+      // Remove from previous location
+      removeFromContainersOnly(pid);
+      const qi = state.queue.indexOf(pid);
+      if (qi>=0) state.queue.splice(qi,1);
+      teamArr.push(pid);
+      const p = state.players[pid];
+      if (p) {
+        p.location = { type: 'court', courtId, team };
+        // Resume timer (no reset)
+        p.lastMovedAt = now();
+      }
+      renderAll();
+    }
+
+    function canStartCourt(courtId) {
+      const c = state.courts.find(x => x.id === courtId);
+      if (!c) return false;
+      return c.teams.A.length === 2 && c.teams.B.length === 2 && c.status !== 'running';
+    }
+
+    function startCourt(courtId) {
+      const c = state.courts.find(x => x.id === courtId);
+      if (!c) return;
+      if (!canStartCourt(courtId)) {
+        alert('Both teams must have 2 players to start.');
+        return;
+      }
+      c.status = 'running';
+      c.startTime = now();
+      renderAll();
+    }
+
+    function endCourt(courtId) {
+      const c = state.courts.find(x => x.id === courtId);
+      if (!c) return;
+      if (c.status !== 'running') {
+        alert('Court is not running.');
+        return;
+      }
+      const endT = now();
+      const hist = {
+        courtId: c.id,
+        courtName: c.name,
+        teamA: c.teams.A.slice(),
+        teamB: c.teams.B.slice(),
+        startedAt: c.startTime,
+        endedAt: endT,
+        durationMs: endT - c.startTime
+      };
+      state.history.push(hist);
+
+      // Move players back to bottom of queue and restart their timers
+      const returning = [...c.teams.A, ...c.teams.B];
+      c.teams.A = [];
+      c.teams.B = [];
+      c.status = 'idle';
+      c.startTime = null;
+
+      returning.forEach(pid => {
+        // append to end and reset timerStartAt
+        const p = state.players[pid];
+        if (p) p.timerStartAt = now();
+        moveToQueue(pid, { appendToEnd: true, resumeTimer: false });
+      });
+
+      renderAll();
+    }
+
+    // --- Payments ---
+    function addPayment() {
+      const name = document.getElementById('payName').value.trim();
+      const amount = parseFloat(document.getElementById('payAmount').value);
+      const method = document.getElementById('payMethod').value;
+      if (!name) return alert('Enter player name.');
+      if (!(amount > 0)) return alert('Enter a valid amount.');
+      const p = { id: uid('pay'), name, amount, method, timestamp: now() };
+      state.payments.push(p);
+      document.getElementById('payName').value = '';
+      document.getElementById('payAmount').value = '';
+      renderPayments();
+      saveState();
+    }
+
+    function exportPaymentsCSV() {
+      const headers = ['Timestamp','Name','Method','Amount'];
+      const rows = state.payments.map(p => [
+        new Date(p.timestamp).toLocaleString(),
+        p.name,
+        p.method,
+        Number(p.amount).toFixed(2)
+      ]);
+      const csv = [headers, ...rows].map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'payments.csv'; // Excel-compatible
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // --- Clear data ---
+    function clearData() {
+      if (!confirm('Clear all current data? This cannot be undone.')) return;
+      // Reset state
+      state.players = {};
+      state.queue = [];
+      state.waitingLists = [
+        { id: 'w1', name: 'Waiting list 1', teams: { A: [], B: [] } },
+        { id: 'w2', name: 'Waiting list 2', teams: { A: [], B: [] } },
+        { id: 'w3', name: 'Waiting list 3', teams: { A: [], B: [] } },
+        { id: 'w4', name: 'Waiting list 4', teams: { A: [], B: [] } },
+      ];
+      state.courts = [];
+      state.history = [];
+      state.payments = [];
+      renderAll();
+    }
+
+    // --- Inputs & init ---
+    document.getElementById('queueInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const name = e.target.value.trim();
+        if (!name) return;
+        addPlayerToQueue(name);
+        e.target.value = '';
+      }
+    });
+
+    document.getElementById('addCourtBtn').addEventListener('click', addCourt);
+    document.getElementById('addPaymentBtn').addEventListener('click', addPayment);
+    document.getElementById('exportPaymentsBtn').addEventListener('click', exportPaymentsCSV);
+    document.getElementById('clearDataBtn').addEventListener('click', clearData);
+
+    // Timer ticker for UI updates (waiting timers + orange coloring)
+    setInterval(() => {
+      // Re-render lightweight parts: queue & lists & courts (for timers)
+      renderQueue();
+      renderWaiting();
+      renderCourts();
+      // history/payments unaffected by timer
+    }, 1000);
+
+    // Load initial state & render
+    loadState();
+    renderAll();
+  </script>
+</body>
+</html>
